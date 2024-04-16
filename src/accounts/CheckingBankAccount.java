@@ -2,11 +2,12 @@ package accounts;
 
 import enums.AccountType;
 import enums.TransactionStatus;
-import enums.TransactionType;
 import inMemoryDBs.DB;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import transactions.BankBillingTransaction;
+import transactions.Transaction;
 import users.BankAccountHolder;
 
 import java.time.LocalDateTime;
@@ -24,27 +25,22 @@ public class CheckingBankAccount extends BankAccount {
 
     @Override
     public void runMonthlyUpdate() {
-
+        if (this.getPausedMonthlyBillingsUntil() != null && this.getPausedMonthlyBillingsUntil().isAfter(LocalDateTime.now())) {
+            return;
+        }
+        if (this.getBalanceAmount() < CheckingBankAccount.MONTHLY_FEE) {
+            System.out.println("Monthly fee of " + CheckingBankAccount.MONTHLY_FEE + " for checking account " + this.getAccountNumber() + "has not been deducted due to insufficient funds");
+            return;
+        }
+        this.setBalanceAmount(this.getBalanceAmount() - (CheckingBankAccount.MONTHLY_FEE));
+        Transaction bankServicesBillingTransaction = BankBillingTransaction.builder()
+                .amount(CheckingBankAccount.MONTHLY_FEE)
+                .sourceAccount(this)
+                .transactionTime(LocalDateTime.now())
+                .transactionStatus(TransactionStatus.COMPLETED)
+                .build();
+        DB.transactions.add(bankServicesBillingTransaction);
+        System.out.println("Monthly fee of " + CheckingBankAccount.MONTHLY_FEE + " for checking account " + this.getAccountNumber() + "has been deducted");
     }
-
-//    public void runMonthlyUpdate() {
-//        if (this.getPausedMonthlyBillingsUntil() != null && this.getPausedMonthlyBillingsUntil().isAfter(LocalDateTime.now())) {
-//            return;
-//        }
-//            if (this.getBalanceAmount() < CheckingBankAccount.MONTHLY_FEE) {
-//                System.out.println("Monthly fee of " + CheckingBankAccount.MONTHLY_FEE + " for checking account " + this.getAccountNumber() + "has not been deducted due to insufficient funds");
-//                return;
-//            }
-//            this.setBalanceAmount(this.getBalanceAmount() - (CheckingBankAccount.MONTHLY_FEE));
-//            Transaction bankServicesBillingTransaction = Transaction.builder()
-//                    .amount(CheckingBankAccount.MONTHLY_FEE)
-//                    .sourceAccount(this)
-//                    .transactionTime(LocalDateTime.now())
-//                    .transactionType(TransactionType.BANK_BILLING)
-//                    .transactionStatus(TransactionStatus.COMPLETED)
-//                    .build();
-//            DB.transactions.add(bankServicesBillingTransaction);
-//            System.out.println("Monthly fee of " + CheckingBankAccount.MONTHLY_FEE + " for checking account " + this.getAccountNumber() + "has been deducted");
-//        }
 
 }

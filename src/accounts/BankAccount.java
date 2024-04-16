@@ -1,7 +1,8 @@
 package accounts;
 
+import adapters.JsonSubtype;
+import adapters.JsonType;
 import enums.AccountType;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import users.BankAccountHolder;
@@ -10,6 +11,13 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@JsonType(
+        property = "accountType",
+        subtypes = {
+                @JsonSubtype(clazz = CheckingBankAccount.class, name = "CHECKING"),
+                @JsonSubtype(clazz = SavingsBankAccount.class, name = "SAVINGS")
+        }
+)
 public abstract class BankAccount {
 
     private String accountNumber;

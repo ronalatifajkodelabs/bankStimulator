@@ -1,13 +1,14 @@
 package users;
 
 import accounts.BankAccount;
-import accounts.Transaction;
+import accounts.SavingsBankAccount;
 import enums.AccountType;
 import enums.TransactionStatus;
-import enums.TransactionType;
 import inMemoryDBs.DB;
 import lombok.Data;
 import lombok.ToString;
+import transactions.Transaction;
+import transactions.TransferTransaction;
 
 @Data
 @ToString(callSuper = true)
@@ -25,25 +26,24 @@ public class BankAccountHolder extends BankUser {
      */
 
     public void transferMoney(BankAccount sourceAccount, BankAccount destinationAccount, double amount) {
-        if (sourceAccount == destinationAccount) {
-            System.out.println("You can't transfer money to the same account");
-            return;
-        }
         if (sourceAccount == null || destinationAccount == null) {
             System.out.println("At least one of the accounts was not found");
             return;
         }
+        if (sourceAccount.equals(destinationAccount)) {
+            System.out.println("You can't transfer money to the same account");
+            return;
+        }
         if (sourceAccount.getAccountType().equals(AccountType.SAVINGS)) {
-            if (amount > sourceAccount.getMinimumBalance()) {
+            if (sourceAccount.getBalanceAmount() - amount < ((SavingsBankAccount) sourceAccount).getMinimumBalance()) {
                 System.out.println("You can't transfer more than the minimum balance of the account");
             }
         }
         if (sourceAccount.getBalanceAmount() < amount) {
-            Transaction transaction = Transaction.builder()
+            Transaction transaction = TransferTransaction.builder()
                     .sourceAccount(sourceAccount)
                     .destinationAccount(destinationAccount)
                     .amount(amount)
-                    .transactionType(TransactionType.TRANSFER)
                     .transactionTime(java.time.LocalDateTime.now())
                     .transactionStatus(TransactionStatus.FAILED)
                     .build();
@@ -52,11 +52,10 @@ public class BankAccountHolder extends BankUser {
         } else {
             sourceAccount.setBalanceAmount(sourceAccount.getBalanceAmount() - amount);
             destinationAccount.setBalanceAmount(destinationAccount.getBalanceAmount() + amount);
-            DB.transactions.add(Transaction.builder()
+            DB.transactions.add(TransferTransaction.builder()
                     .sourceAccount(sourceAccount)
                     .destinationAccount(destinationAccount)
                     .amount(amount)
-                    .transactionType(TransactionType.TRANSFER)
                     .transactionTime(java.time.LocalDateTime.now())
                     .transactionStatus(TransactionStatus.COMPLETED)
                     .build());
@@ -83,7 +82,7 @@ public class BankAccountHolder extends BankUser {
     private void getTransactionListForSpecificTime(BankAccount bankAccount, String startTime, String endTime) {
         System.out.println("Transaction list for " + bankAccount.getAccountNumber() + " between " + startTime + " and " + endTime);
         DB.transactions.stream()
-                .filter(transaction -> (transaction.getSourceAccount().equals(bankAccount) || (transaction.getDestinationAccount() != null && transaction.getDestinationAccount().equals(bankAccount)))
+                .filter(transaction -> (transaction.getSourceAccount().equals(bankAccount) || (transaction instanceof TransferTransaction) && ((TransferTransaction) transaction).getDestinationAccount() != null && ((TransferTransaction) transaction).getDestinationAccount().equals(bankAccount))
                         && transaction.getTransactionTime().isAfter(java.time.LocalDateTime.parse(startTime)) && transaction.getTransactionTime().isBefore(java.time.LocalDateTime.parse(endTime)))
                 .forEach(System.out::println);
     }
@@ -95,6 +94,13 @@ public class BankAccountHolder extends BankUser {
             return;
         }
         getTransactionListForSpecificTime(bankAccount, startTime, endTime);
+    }
+
+    public boolean equals(Object obj) {
+        if (obj instanceof BankAccountHolder bankAccountHolder) {
+            return this.getFirstName().equals(bankAccountHolder.getFirstName()) && this.getLastName().equals(bankAccountHolder.getLastName());
+        }
+        return false;
     }
 
 }

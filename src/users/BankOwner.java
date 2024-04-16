@@ -1,13 +1,13 @@
 package users;
 
-import enums.AccountType;
 import accounts.BankAccount;
-import accounts.Transaction;
+import enums.AccountType;
 import enums.TransactionStatus;
 import enums.TransactionType;
 import inMemoryDBs.DB;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import transactions.Transaction;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,22 +31,36 @@ public class BankOwner extends BankUser {
 
     public double getTotalYearlyIncome() {
         return DB.transactions.stream()
+                .filter(transaction -> transaction.getTransactionType().equals(TransactionType.BANK_BILLING) && transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED))
                 .mapToDouble(Transaction::getAmount)
                 .sum();
     }
 
-    //TODO ktu i kom combine getIncomeFromCheckingAccounts edhe getIncomeFromSavingsAccounts
+    public double getIncomeForYear(int year) {
+        return DB.transactions.stream()
+                .filter(transaction -> transaction.getTransactionType().equals(TransactionType.BANK_BILLING)&& transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED))
+                .filter(transaction -> transaction.getTransactionTime().getYear() == year)
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+    }
+
+    //TODO if this were generic how to change it?
     public double getIncomeFromAccountsByAccountType(AccountType accountType) {
         return DB.transactions.stream()
                 .filter(transaction -> transaction.getSourceAccount().getAccountType() != null && transaction.getSourceAccount().getAccountType().equals(accountType)
                         && transaction.getTransactionType().equals(TransactionType.BANK_BILLING) && transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED))
                 .mapToDouble(Transaction::getAmount)
                 .sum();
-
-        //xTODO if this were geniric how to change it?
     }
 
-    //TODO me marr prej json ose me kriju ni klas bank account db e aty mi shti in memory list on creation
+    public <T extends BankAccount> double getIncomeFromAccountsByAccountTypeGeneric(Class<T> bankAccountClass) {
+        return DB.transactions.stream()
+                .filter(transaction -> transaction.getSourceAccount().getAccountType() != null && transaction.getSourceAccount().getClass().equals(bankAccountClass)
+                        && transaction.getTransactionType().equals(TransactionType.BANK_BILLING) && transaction.getTransactionStatus().equals(TransactionStatus.COMPLETED))
+                .mapToDouble(Transaction::getAmount)
+                .sum();
+    }
+
     public List<BankAccount> getAllAccounts() {
         return DB.bankAccounts;
     }
@@ -58,7 +72,6 @@ public class BankOwner extends BankUser {
                 .sum();
     }
 
-    //TODO test this - had issues with making this a nested stream
     public List<BankAccount> getTopFivePayingSavingsAccounts() {
         Map<BankAccount, Double> bankAccountToTotalAmountBilled = new HashMap<>();
 

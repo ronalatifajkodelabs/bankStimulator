@@ -2,11 +2,12 @@ package accounts;
 
 import enums.AccountType;
 import enums.TransactionStatus;
-import enums.TransactionType;
 import inMemoryDBs.DB;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import transactions.BankBillingTransaction;
+import transactions.Transaction;
 import users.BankAccountHolder;
 
 import java.time.LocalDateTime;
@@ -26,15 +27,14 @@ public class SavingsBankAccount extends BankAccount {
 
     public void runMonthlyUpdate() {
         if (this.getBalanceAmount() < (this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)) {
-            System.out.println("Monthly fee of " + (this.getBalanceAmount() - (this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)) + " for saving account " + this.getAccountNumber() + "has not been deducted due to insufficient funds");
+            System.out.println("Monthly fee of " + (this.getBalanceAmount() - (this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)) + " for saving account " + this.getAccountNumber() + " has not been deducted due to insufficient funds");
             return;
         }
-        System.out.println("Monthly fee of " + this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE + " for saving account " + this.getAccountNumber() + "has been deducted");
-        Transaction bankServicesBillingTransaction = Transaction.builder()
+        System.out.println("Monthly fee of " + this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE + " for saving account " + this.getAccountNumber() + " has been deducted");
+        Transaction bankServicesBillingTransaction = BankBillingTransaction.builder()
                 .amount(this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)
                 .sourceAccount(this)
                 .transactionTime(LocalDateTime.now())
-                .transactionType(TransactionType.BANK_BILLING)
                 .transactionStatus(TransactionStatus.COMPLETED)
                 .build();
         this.setBalanceAmount(this.getBalanceAmount() - (this.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE));

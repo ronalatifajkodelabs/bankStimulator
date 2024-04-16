@@ -406,7 +406,7 @@
       },
       "balanceAmount": 27467.99,
       "accountType": "SAVINGS",
-      "pausedMonthlyBillingsUntil": "2023-01-14T17:36:49.470Z",
+      "pausedMonthlyBillingsUntil": "2023-01-14 17:36:49",
       "minimumBalance": 54.97
     },
     "amount": 100.0,

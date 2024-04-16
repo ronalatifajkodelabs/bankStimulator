@@ -1,11 +1,15 @@
 package users;
 
-import accounts.*;
-import enums.TransactionStatus;
+import accounts.BankAccount;
+import accounts.CheckingBankAccount;
+import accounts.SavingsBankAccount;
 import enums.TransactionType;
 import inMemoryDBs.DB;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import transactions.DepositTransaction;
+import transactions.Transaction;
+import transactions.WithdrawTransaction;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -54,45 +58,23 @@ public class BankEmployee extends BankUser {
 
     public void updateBankAccountBalance(BankAccount bankAccount, TransactionType transactionType, double amount) {
         if (transactionType == TransactionType.DEPOSIT) {
-            bankAccount.setBalanceAmount(bankAccount.getBalanceAmount() + amount);
-            inMemoryDBs.DB.transactions.add(
-                    Transaction.builder()
-                            .destinationAccount(bankAccount)
-                            .amount(amount)
-                            .transactionType(TransactionType.DEPOSIT)
-                            .transactionTime(java.time.LocalDateTime.now())
-                            .transactionStatus(TransactionStatus.COMPLETED)
-                            .build());
-            System.out.println("Deposit successful");
+            DepositTransaction.performTransaction(bankAccount, amount);
         } else if (transactionType == TransactionType.WITHDRAWAL) {
-            if (bankAccount.getBalanceAmount() < amount) {
-                DB.transactions.add(
-                        Transaction.builder()
-                                .sourceAccount(bankAccount)
-                                .amount(amount)
-                                .transactionType(TransactionType.WITHDRAWAL)
-                                .transactionTime(java.time.LocalDateTime.now())
-                                .transactionStatus(TransactionStatus.FAILED)
-                                .build());
-                System.out.println("Insufficient funds");
-            } else {
-                bankAccount.setBalanceAmount(bankAccount.getBalanceAmount() - amount);
-                DB.transactions.add(
-                        Transaction.builder()
-                                .sourceAccount(bankAccount)
-                                .amount(amount)
-                                .transactionType(TransactionType.WITHDRAWAL)
-                                .transactionTime(java.time.LocalDateTime.now())
-                                .transactionStatus(TransactionStatus.COMPLETED)
-                                .build());
-                System.out.println("Withdrawal successful");
-            }
+            WithdrawTransaction.performTransaction(bankAccount, amount);
         }
     }
 
-    public double formatToTwoDecimals(double amount) {
-        return Math.round(amount * 100.0) / 100.0;
+    public void updateBankAccountBalanceGeneric(BankAccount bankAccount, Transaction transactionTypeClass, double amount) {
+//        Transaction.performTransaction(bankAccount, amount);
     }
+
+
+    //TODO check this out me Ernen
+    // this is not an abstract method can I call it from superclass?
+//    public <T extends Transaction> void updateBankAccountBalance(BankAccount bankAccount, T transaction, double amount) {
+//        transaction.performTransaction(bankAccount, amount);
+//    }
+
 
     public void runMonthlyUpdateForAllAccounts() {
         for (BankAccount bankAccount : DB.bankAccounts) {
@@ -129,7 +111,6 @@ public class BankEmployee extends BankUser {
 //                System.out.println("Monthly fee of " + (bankAccount.getBalanceAmount() - (bankAccount.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)) + " for saving account " + bankAccount.getAccountNumber() + "has not been deducted due to insufficient funds");
 //                return;
 //            }
-//            //TODO e kom bo nihere set pastaj add transaction po e kom ndreq me tests
 //            System.out.println("Monthly fee of " + formatToTwoDecimals(bankAccount.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE) + " for saving account " + bankAccount.getAccountNumber() + "has been deducted");
 //            Transaction bankServicesBillingTransaction = Transaction.builder()
 //                    .amount(bankAccount.getBalanceAmount() * SavingsBankAccount.INTEREST_RATE)
