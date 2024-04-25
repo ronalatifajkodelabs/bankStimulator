@@ -1,3 +1,3 @@
 # Bank Stimulator application in Java
 
-### Amazon Correto 21.0.2
+### Amazon Corretto 21.0.2
